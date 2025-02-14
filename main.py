@@ -36,10 +36,32 @@ parser.add_argument('-f', action='store_true', help='Flag to trigger a specific 
 parser.add_argument('-n', type=int, help='Number of the emulator you want to open');
 args = parser.parse_args()
 
+def set_emulator_path_in_system(emulator_path):
+
+    config_file_path = os.path.join(os.path.dirname(__file__), "emulator_path_config.txt")
+
+    with open(config_file_path, 'w') as file:
+        file.write(emulator_path)
+
+    print(f"Emulator path saved to {config_file_path}.")
+
+def get_emulator_path_from_file():
+    config_file_path = os.path.join(os.path.dirname(__file__), "emulator_path_config.txt")
+
+    if os.path.exists(config_file_path):
+        with open(config_file_path, 'r') as file:
+            emulator_path = file.read().strip()
+        return emulator_path
+    else:
+        return None
+
 if args.emulator_path:
-    emulator_path = args.emulator_path
+    set_emulator_path_in_system(args.emulator_path)
+    emulator_path = get_emulator_path_from_file()
+elif os.path.exists(os.path.join(os.path.dirname(__file__), "emulator_path_config.txt")):
+    emulator_path = get_emulator_path_from_file()
 else:
-    emulator_path = os.path.join(user_path, "AppDataaa", "Local", "Android", "Sdk", "emulator", "emulator.exe")
+    emulator_path = os.path.join(user_path, "AppData", "Local", "Android", "Sdk", "emulator", "emulator.exe")
 
 def get_installed_emulators():
     global emulator
@@ -68,21 +90,24 @@ def update_emulator_config(emulator_name):
     config_path = os.path.join(user_path, ".android", "avd", f"{emulator_name}.avd", "emulator-user.ini")
     print('config_path is: ', config_path)
     
-    if os.path.exists(config_path):
-        with open(config_path, 'r') as file:
-            lines = file.readlines()
-            print(lines)
-        
-        with open(config_path, 'w') as file:
-            for line in lines:
-                if line.startswith("window.x"):
-                    file.write("window.x = 0\n")
-                elif line.startswith("window.y"):
-                    file.write("window.y = 0\n")
-                else:
-                    file.write(line)
-    else:
-        print(f"Configuration file for {emulator_name} not found.")
+    try:
+        if os.path.exists(config_path):
+            with open(config_path, 'r') as file:
+                lines = file.readlines()
+                print(lines)
+            
+            with open(config_path, 'w') as file:
+                for line in lines:
+                    if line.startswith("window.x"):
+                        file.write("window.x = 0\n")
+                    elif line.startswith("window.y"):
+                        file.write("window.y = 0\n")
+                    else:
+                        file.write(line)
+        else:
+            print(f"Configuration file for {emulator_name} not found.")
+    finally:
+        print('Moving forward...')
 
 def start_emulator(emulator_name):
     command = f"{emulator} -avd {emulator_name}"
